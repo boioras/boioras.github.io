@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Raymond Huang — portfolio.exe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #2a2a2a;
+    --border2: #1f1f1f;
+    --accent: #888888;
+    --accent2: #bbbbbb;
+    --accent-dim: rgba(180,180,180,0.08);
+    --accent-glow: rgba(180,180,180,0.04);
+    --text: #a0a0a0;
+    --text-dim: #484848;
+    --text-bright: #e0e0e0;
+    --titlebar: #0d0d0d;
+    --tag-unity: rgba(160,160,160,0.12);
+    --tag-cs: rgba(160,160,160,0.12);
+    --tag-2d: rgba(160,160,160,0.12);
+    --tag-physics: rgba(160,160,160,0.12);
+    --tag-proc: rgba(160,160,160,0.12);
+    --tag-c: rgba(160,160,160,0.12);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── TASKBAR ─── */
+  .taskbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 36px;
+    background: var(--titlebar);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .taskbar-left { display: flex; align-items: center; gap: 12px; }
+  .taskbar-logo {
+    width: 18px; height: 18px;
+    background: var(--accent);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    flex-shrink: 0;
+  }
+  .taskbar-tabs { display: flex; gap: 2px; }
+  .taskbar-tab {
+    padding: 4px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--text);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.15s;
+  }
+  .taskbar-tab:hover { background: var(--border); }
+  .taskbar-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+  .tab-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+  .taskbar-right { display: flex; align-items: center; gap: 16px; }
+  .taskbar-clock { letter-spacing: 0.05em; }
+
+  /* ─── LAYOUT ─── */
+  .desktop {
+    margin-top: 36px;
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-bottom: 32px;
+  }
+
+  /* Left sidebar — fully independent flex column */
+  .sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-self: flex-start; /* sidebar itself doesn't stretch */
+  }
+
+  /* Right content — stacks windows vertically */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  /* ─── WINDOW ─── */
+  .window {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    animation: windowOpen 0.25s ease both;
+    /* Each window is fully self-contained */
+    flex-shrink: 0;
+  }
+  @keyframes windowOpen {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to   { opacity: 1; transform: none; }
+  }
+  .sidebar .window:nth-child(1) { animation-delay: 0.00s; }
+  .sidebar .window:nth-child(2) { animation-delay: 0.06s; }
+  .main .window:nth-child(1)    { animation-delay: 0.12s; }
+  .main .window:nth-child(2)    { animation-delay: 0.18s; }
+  .main .window:nth-child(3)    { animation-delay: 0.24s; }
+  .main .window:nth-child(4)    { animation-delay: 0.30s; }
+
+  .titlebar {
+    height: 28px;
+    background: var(--titlebar);
+    border-bottom: 1px solid var(--border2);
+    display: flex; align-items: center;
+    padding: 0 10px;
+    gap: 8px;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .titlebar-icon { font-size: 11px; opacity: 0.7; }
+  .titlebar-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    flex: 1;
+    letter-spacing: 0.02em;
+  }
+  .win-btns { display: flex; margin-left: auto; }
+  .win-btn-collapse {
+    width: 20px; height: 20px;
+    border-radius: 2px;
+    background: transparent;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .win-btn-collapse:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent2); }
+  .window.collapsed .win-btn-collapse { color: var(--accent2); border-color: var(--accent); }
+
+  /* ─── COLLAPSE ANIMATION ─── */
+  /* All windows collapse independently — no shared row heights */
+  .window-body {
+    padding: 14px;
+    overflow: hidden;
+    max-height: 2000px;
+    opacity: 1;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.25s ease,
+                padding 0.3s ease;
+  }
+  .window.collapsed .window-body {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  /* ─── PROFILE ─── */
+  .profile-avatar {
+    width: 56px; height: 56px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(180,180,180,0.2);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px; font-weight: 700;
+    color: var(--accent2);
+    margin: 0 auto 10px;
+  }
+  .profile-name {
+    font-size: 14px; font-weight: 600;
+    color: var(--text-bright);
+    text-align: center; margin-bottom: 3px;
+  }
+  .profile-role {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: var(--text-dim);
+    text-align: center; margin-bottom: 14px;
+  }
+  .profile-divider { height: 1px; background: var(--border2); margin: 10px 0; }
+  .profile-stat {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 3px 0; font-size: 11px;
+  }
+  .stat-label { color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
+  .stat-val   { color: var(--accent2); font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+
+  /* ─── EXPLORER ─── */
+  .explorer-tree { font-size: 11px; font-family: 'IBM Plex Mono', monospace; }
+  .tree-folder {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text); padding: 2px 0; cursor: pointer; font-size: 11px;
+  }
+  .tree-folder-icon { color: #888888; font-size: 12px; }
+  .tree-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 2px 0 2px 18px;
+    color: var(--text-dim); cursor: pointer;
+    font-size: 10px; transition: color 0.15s;
+  }
+  .tree-item:hover { color: var(--accent2); }
+  .file-status {
+    margin-top: 10px; font-size: 9px; color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    border-top: 1px solid var(--border2); padding-top: 8px;
+  }
+
+  /* ─── ABOUT ─── */
+  .about-text {
+    font-size: 12.5px; line-height: 1.7; color: var(--text); margin-bottom: 14px;
+  }
+  .about-text em { color: var(--accent2); font-style: normal; font-weight: 500; }
+  .stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px;
+  }
+  .stat-box {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 3px; padding: 10px 6px; text-align: center;
+  }
+  .stat-box-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px; font-weight: 700; color: var(--accent2);
+    display: block; margin-bottom: 2px;
+  }
+  .stat-box-label {
+    font-size: 9px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+
+  /* ─── GAMES ─── */
+  .games-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .game-card {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 3px; padding: 12px;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: default; position: relative; overflow: hidden;
+  }
+  .game-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent); opacity: 0; transition: opacity 0.2s;
+  }
+  .game-card:hover { border-color: var(--accent); background: var(--accent-glow); }
+  .game-card:hover::before { opacity: 1; }
+  .game-title { font-size: 12px; font-weight: 600; color: var(--text-bright); margin-bottom: 5px; }
+  .game-desc { font-size: 10px; color: var(--text-dim); line-height: 1.6; margin-bottom: 10px; }
+  .game-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .tag { font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 2px; letter-spacing: 0.04em; }
+  .tag-unity   { background: var(--tag-unity);   color: #999999; }
+  .tag-cs      { background: var(--tag-cs);      color: #999999; }
+  .tag-2d      { background: var(--tag-2d);      color: #999999; }
+  .tag-physics { background: var(--tag-physics); color: #999999; }
+  .tag-proc    { background: var(--tag-proc);    color: #999999; }
+  .game-link {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--accent2);
+    text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+    transition: opacity 0.15s;
+  }
+  .game-link:hover { opacity: 0.7; }
+
+  /* ─── SKILLS ─── */
+  .skills-section { margin-bottom: 12px; }
+  .skills-section:last-child { margin-bottom: 0; }
+  .skills-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 7px;
+  }
+  .skills-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .skill-chip {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    padding: 3px 8px; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 2px; color: var(--text); transition: border-color 0.15s, color 0.15s; cursor: default;
+  }
+  .skill-chip:hover { border-color: var(--accent); color: var(--accent2); }
+
+  /* ─── CONTACT ─── */
+  .contact-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .contact-btn {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 3px; padding: 12px 6px; text-align: center;
+    text-decoration: none; color: var(--text-dim);
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .contact-btn:hover { border-color: var(--accent); color: var(--accent2); background: var(--accent-glow); }
+  .contact-btn-icon { font-size: 18px; }
+  .contact-btn-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.04em; }
+
+  /* ─── STATUS BAR ─── */
+  .statusbar {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 22px;
+    background: var(--titlebar); border-top: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 16px; gap: 20px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim);
+  }
+  .status-item { display: flex; align-items: center; gap: 5px; }
+  .status-dot { width: 5px; height: 5px; border-radius: 50%; background: #777777; flex-shrink: 0; }
+  .status-sep { margin-left: auto; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 740px) {
+    .desktop { flex-direction: column; }
+    .sidebar { width: 100%; }
+    .games-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .contact-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- TASKBAR -->
+<div class="taskbar">
+  <div class="taskbar-left">
+    <div class="taskbar-logo"></div>
+    <div class="taskbar-tabs">
+      <div class="taskbar-tab active"><div class="tab-dot"></div>portfolio.exe</div>
+      <div class="taskbar-tab">projects</div>
+    </div>
+  </div>
+  <div class="taskbar-right">
+    <span>EN</span>
+    <span class="taskbar-clock" id="clock"></span>
+  </div>
+</div>
+
+<!-- DESKTOP -->
+<div class="desktop">
+
+  <!-- ═══ SIDEBAR (fully independent) ═══ -->
+  <div class="sidebar">
+
+    <!-- PROFILE -->
+    <div class="window">
+      <div class="titlebar">
+        <span class="titlebar-icon">👤</span>
+        <span class="titlebar-title">Profile</span>
+        <div class="win-btns"><button class="win-btn-collapse" onclick="toggleWindow(this)">—</button></div>
+      </div>
+      <div class="window-body">
+        <div class="profile-avatar">RH</div>
+        <div class="profile-name">Raymond Huang</div>
+        <div class="profile-role">Software Engineer &amp; Game Dev</div>
+        <div class="profile-divider"></div>
+        <div class="profile-stat"><span class="stat-label">Experience</span><span class="stat-val">3 yrs</span></div>
+        <div class="profile-stat"><span class="stat-label">Games</span><span class="stat-val">3 shipped</span></div>
+        <div class="profile-stat"><span class="stat-label">Commits</span><span class="stat-val">450+</span></div>
+        <div class="profile-stat"><span class="stat-label">Location</span><span class="stat-val">Sydney</span></div>
+      </div>
+    </div>
+
+    <!-- EXPLORER -->
+    <div class="window">
+      <div class="titlebar">
+        <span class="titlebar-icon">📁</span>
+        <span class="titlebar-title">Explorer</span>
+        <div class="win-btns"><button class="win-btn-collapse" onclick="toggleWindow(this)">—</button></div>
+      </div>
+      <div class="window-body">
+        <div class="explorer-tree">
+          <div class="tree-folder"><span class="tree-folder-icon">▼</span><span>📁</span> Portfolio</div>
+          <div class="tree-item">📄 about.txt</div>
+          <div class="tree-item">📁 games (3)</div>
+          <div class="tree-item">🔗 contact.lnk</div>
+          <div class="tree-item">⚙️ skills.ini</div>
+        </div>
+        <div class="file-status">4 items &nbsp;·&nbsp; portfolio/</div>
+      </div>
+    </div>
+
+  </div>
+  <!-- ═══ END SIDEBAR ═══ -->
+
+  <!-- ═══ MAIN (right column) ═══ -->
+  <div class="main">
+
+    <!-- ABOUT -->
+    <div class="window">
+      <div class="titlebar">
+        <span class="titlebar-icon">📄</span>
+        <span class="titlebar-title">about.txt — Notepad</span>
+        <div class="win-btns"><button class="win-btn-collapse" onclick="toggleWindow(this)">—</button></div>
+      </div>
+      <div class="window-body">
+        <p class="about-text">
+          Software engineer and game developer. I write <em>clean code</em> and ship games with my team.
+          Comfortable across the stack — from <em>Unity prototypes</em> to full-stack web apps.
+          Based in Sydney.
+        </p>
+        <div class="stats-row">
+          <div class="stat-box"><span class="stat-box-num">3</span><span class="stat-box-label">Games</span></div>
+          <div class="stat-box"><span class="stat-box-num">3</span><span class="stat-box-label">Years</span></div>
+          <div class="stat-box"><span class="stat-box-num">450+</span><span class="stat-box-label">Commits</span></div>
+          <div class="stat-box"><span class="stat-box-num">∞</span><span class="stat-box-label">Coffee</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SKILLS -->
+    <div class="window">
+      <div class="titlebar">
+        <span class="titlebar-icon">⚙️</span>
+        <span class="titlebar-title">skills.ini — System Properties</span>
+        <div class="win-btns"><button class="win-btn-collapse" onclick="toggleWindow(this)">—</button></div>
+      </div>
+      <div class="window-body">
+        <div class="skills-section">
+          <div class="skills-label">Game Dev</div>
+          <div class="skills-chips">
+            <span class="skill-chip">Unity</span>
+            <span class="skill-chip">C#</span>
+            <span class="skill-chip">Godot</span>
+            <span class="skill-chip">2D / 3D</span>
+            <span class="skill-chip">Tilemaps</span>
+            <span class="skill-chip">Shaders</span>
+          </div>
+        </div>
+        <div class="skills-section">
+          <div class="skills-label">Programming</div>
+          <div class="skills-chips">
+            <span class="skill-chip">Python</span>
+            <span class="skill-chip">JavaScript</span>
+            <span class="skill-chip">TypeScript</span>
+            <span class="skill-chip">C++</span>
+            <span class="skill-chip">SQL</span>
+          </div>
+        </div>
+        <div class="skills-section">
+          <div class="skills-label">Web / Tools</div>
+          <div class="skills-chips">
+            <span class="skill-chip">React</span>
+            <span class="skill-chip">Node.js</span>
+            <span class="skill-chip">Git</span>
+            <span class="skill-chip">GitHub Actions</span>
+            <span class="skill-chip">Figma</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAMES -->
+    <div class="window">
+      <div class="titlebar">
+        <span class="titlebar-icon">🎮</span>
+        <span class="titlebar-title">games — File Explorer</span>
+        <div class="win-btns"><button class="win-btn-collapse" onclick="toggleWindow(this)">—</button></div>
+      </div>
+      <div class="window-body">
+        <div class="games-grid">
+          <div class="game-card">
+            <div class="game-title">Scarecrow Defence</div>
+            <div class="game-desc">Farm-themed tower defence. As a scarecrow, defend your farm from relentless swarms of pests.</div>
+            <div class="game-tags">
+              <span class="tag tag-unity">Unity</span>
+              <span class="tag tag-cs">C#</span>
+              <span class="tag tag-2d">2D</span>
+            </div>
+            <a href="https://mrcheeseandpie.itch.io/scarecrow-defence" class="game-link" target="_blank">↗ itch.io</a>
+          </div>
+          <div class="game-card">
+            <div class="game-title">Mage Against Machine</div>
+            <div class="game-desc">Medieval survivor roguelike. Survive the waves of mechanical swarms through wizardry.</div>
+            <div class="game-tags">
+              <span class="tag tag-unity">Unity</span>
+              <span class="tag tag-physics">Physics</span>
+            </div>
+            <a href="https://nicolechu.itch.io/mage-against-machine" class="game-link" target="_blank">↗ itch.io</a>
+          </div>
+          <div class="game-card">
+            <div class="game-title">Soulite</div>
+            <div class="game-desc">2D bullet hell. Dodge and defeat all opposition with body and soul to reclaim your life.</div>
+            <div class="game-tags">
+              <span class="tag tag-unity">Unity</span>
+              <span class="tag tag-proc">Procedural</span>
+            </div>
+            <a href="https://imkindzz.itch.io/soulite" class="game-link" target="_blank">↗ itch.io</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="window">
+      <div class="titlebar">
+        <span class="titlebar-icon">🔗</span>
+        <span class="titlebar-title">contact.lnk</span>
+        <div class="win-btns"><button class="win-btn-collapse" onclick="toggleWindow(this)">—</button></div>
+      </div>
+      <div class="window-body">
+        <div class="contact-grid">
+          <a href="https://github.com" class="contact-btn" target="_blank">
+            <span class="contact-btn-icon">🐙</span>
+            <span class="contact-btn-label">GitHub</span>
+          </a>
+          <a href="mailto:you@email.com" class="contact-btn">
+            <span class="contact-btn-icon">✉️</span>
+            <span class="contact-btn-label">Email</span>
+          </a>
+          <a href="https://itch.io" class="contact-btn" target="_blank">
+            <span class="contact-btn-icon">🎮</span>
+            <span class="contact-btn-label">itch.io</span>
+          </a>
+          <a href="https://linkedin.com" class="contact-btn" target="_blank">
+            <span class="contact-btn-icon">💼</span>
+            <span class="contact-btn-label">LinkedIn</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- ═══ END MAIN ═══ -->
+
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="status-item">
+    <div class="status-dot"></div>
+    <span>portfolio.exe — running</span>
+  </div>
+  <span class="status-sep"></span>
+  <span>6 windows open</span>
+  <span>Sydney, AU</span>
+</div>
+
+<script>
+  function toggleWindow(btn) {
+    const win = btn.closest('.window');
+    const isCollapsed = win.classList.toggle('collapsed');
+    btn.textContent = isCollapsed ? '+' : '—';
+  }
+
+  function tick() {
+    const now = new Date();
+    const d = now.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+    const t = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('clock').textContent = d + '  ' + t;
+  }
+  tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>
